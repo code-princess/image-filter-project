@@ -1,5 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import { Request, Response } from 'express';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
 (async () => {
@@ -14,24 +15,37 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   app.use(bodyParser.json());
 
   // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
-  app.get("/filteredimage", async (req, res)=>{
-    
-    
-   try {
-    let image_url = req.query.image_url
-    const filterimage= await filterImageFromURL(image_url)
-    if(!image_url){
+  app.get('/filteredimage', async (req:Request, res:Response)=>{ 
+   
+    let image_url:any = req.query.image_url
+
+    try{
+      const filterimage = await filterImageFromURL(image_url)
+
+     if(!image_url){
       return res.status(400).send("image_url is required")
     }
     
     res.status(200).sendFile(filterimage)
+
     res.on("close",()=>{
       deleteLocalFiles([filterimage])
     })
-   } catch (error) {
-    res.status(422).send(" internal server error")
-  }
+   } catch (e) {
 
+    if (e ) {
+
+      res.status(404).send(`Invalid Query Value. Could not fetch resource. Check image URL`);
+
+    } else if (e) {
+
+      res.status(406).send('Please enter image URL');
+    } 
+    else {
+
+      res.status(400).send('Invalid Query Key');
+    }
+   }
   })
   // GET /filteredimage?image_url={{URL}}
   // endpoint to filter an image from a public url.
